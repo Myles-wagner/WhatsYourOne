@@ -1,0 +1,32 @@
+.item-card {
+  border: 3px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f7f7f7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  width: 150px;
+}
+
+.item-card:hover {
+  background: #e6f0ff;
+}
+
+.item-card.selected {
+  border-color: #4287f5;
+}
+
+.item-card img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.item-name {
+  padding: 10px;
+  text-align: center;
+  word-break: break-word;
+}

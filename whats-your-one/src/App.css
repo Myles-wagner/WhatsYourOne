@@ -1,0 +1,46 @@
+.App {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.App-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.app-content {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .app-content {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  
+  .comparison-container {
+    flex: 3;
+  }
+  
+  .results-container {
+    flex: 2;
+    margin-left: 30px;
+  }
+}
+
+.loading {
+  text-align: center;
+  padding: 50px;
+  font-size: 20px;
+}
+
+.completed-message {
+  text-align: center;
+  padding: 30px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}

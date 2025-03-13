@@ -1,0 +1,32 @@
+.results-container {
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.results-container h2 {
+  margin-top: 0;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+}
+
+.favorites-list {
+  padding-left: 25px;
+}
+
+.favorite-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.rank {
+  font-weight: bold;
+  font-size: 18px;
+  margin-right: 15px;
+}
+
+.no-favorites {
+  color: #666;
+  font-style: italic;
+}

@@ -1,0 +1,63 @@
+.home-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.tagline {
+  font-size: 1.2rem;
+  color: #555;
+  margin-top: 0;
+}
+
+.home-description {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.instructions {
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 20px 40px;
+  margin-bottom: 40px;
+}
+
+.instructions h2 {
+  text-align: center;
+  margin-top: 0;
+}
+
+.instructions ol {
+  padding-left: 20px;
+}
+
+.instructions li {
+  margin-bottom: 10px;
+}
+
+.cta-container {
+  text-align: center;
+  margin: 40px 0;
+}
+
+.cta-button {
+  display: inline-block;
+  background-color: #4285f4;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 12px 30px;
+  border-radius: 30px;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.cta-button:hover {
+  background-color: #3367d6;
+}
