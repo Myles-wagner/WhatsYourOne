@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/WhatsYourOne/static/css/main.f4a2b023.css",
-    "main.js": "/WhatsYourOne/static/js/main.486b8d14.js",
+    "main.js": "/WhatsYourOne/static/js/main.8ff98b46.js",
     "static/js/45.375baea3.chunk.js": "/WhatsYourOne/static/js/45.375baea3.chunk.js",
     "static/js/47.f07dedef.chunk.js": "/WhatsYourOne/static/js/47.f07dedef.chunk.js",
     "static/js/678.95543e3d.chunk.js": "/WhatsYourOne/static/js/678.95543e3d.chunk.js",
@@ -14,7 +14,7 @@
     "static/js/277.0acc4efd.chunk.js": "/WhatsYourOne/static/js/277.0acc4efd.chunk.js",
     "index.html": "/WhatsYourOne/index.html",
     "main.f4a2b023.css.map": "/WhatsYourOne/static/css/main.f4a2b023.css.map",
-    "main.486b8d14.js.map": "/WhatsYourOne/static/js/main.486b8d14.js.map",
+    "main.8ff98b46.js.map": "/WhatsYourOne/static/js/main.8ff98b46.js.map",
     "45.375baea3.chunk.js.map": "/WhatsYourOne/static/js/45.375baea3.chunk.js.map",
     "47.f07dedef.chunk.js.map": "/WhatsYourOne/static/js/47.f07dedef.chunk.js.map",
     "678.95543e3d.chunk.js.map": "/WhatsYourOne/static/js/678.95543e3d.chunk.js.map",
@@ -28,6 +28,6 @@
   },
   "entrypoints": [
     "static/css/main.f4a2b023.css",
-    "static/js/main.486b8d14.js"
+    "static/js/main.8ff98b46.js"
   ]
 }
