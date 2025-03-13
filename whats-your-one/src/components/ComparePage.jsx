@@ -1,3 +1,4 @@
+// src/components/ComparePage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ComparisonView from './ComparisonView';
@@ -10,13 +11,14 @@ function ComparePage() {
   const { listId } = useParams();
   const [picker, setPicker] = useState(null);
   const [list, setList] = useState(null);
-  const [forceUpdate, setForceUpdate] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("Loading list:", listId);
     const selectedList = getListById(listId);
     
     if (!selectedList) {
+      console.error("List not found:", listId);
       setLoading(false);
       return;
     }
@@ -27,50 +29,31 @@ function ComparePage() {
     const newPicker = createPicker(selectedList.items);
     setPicker(newPicker);
     
-    // Try to load from localStorage
-    try {
-      const savedState = localStorage.getItem(`whats-your-one-${listId}`);
-      if (savedState) {
-        console.log('Found saved state for', listId);
-      }
-    } catch (e) {
-      console.error('Error loading saved state:', e);
-    }
-    
     setLoading(false);
   }, [listId]);
-
-  // Update the picker and trigger a re-render
-  const updatePicker = () => {
-    setForceUpdate(prev => prev + 1);
-    
-    try {
-      // Save to localStorage (simplified for now)
-      localStorage.setItem(`whats-your-one-${listId}`, JSON.stringify({ lastUpdated: new Date() }));
-    } catch (e) {
-      console.error('Error saving state:', e);
-    }
-  };
 
   const handlePick = (selectedIds) => {
     if (!picker || !selectedIds || selectedIds.length === 0) return;
     
     picker.pick(selectedIds);
-    updatePicker();
+    // Force re-render
+    setPicker({...picker});
   };
 
   const handlePass = () => {
     if (!picker) return;
     
     picker.pass();
-    updatePicker();
+    // Force re-render
+    setPicker({...picker});
   };
 
   const handleUndo = () => {
     if (!picker) return;
     
     if (picker.undo()) {
-      updatePicker();
+      // Force re-render
+      setPicker({...picker});
     }
   };
 
@@ -78,7 +61,8 @@ function ComparePage() {
     if (!picker) return;
     
     if (picker.redo()) {
-      updatePicker();
+      // Force re-render
+      setPicker({...picker});
     }
   };
 
@@ -107,7 +91,7 @@ function ComparePage() {
       </header>
       
       <main className="compare-content">
-        {picker.evaluating.length > 0 ? (
+        {picker && picker.evaluating && picker.evaluating.length > 0 ? (
           <ComparisonView 
             items={picker.evaluating} 
             onPick={handlePick}
@@ -131,7 +115,7 @@ function ComparePage() {
           </div>
         )}
         
-        <ResultsView favorites={picker.favorites} />
+        <ResultsView favorites={picker ? picker.favorites : []} />
       </main>
     </div>
   );
