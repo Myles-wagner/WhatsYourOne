@@ -31,6 +31,9 @@ function ListsPage() {
           </Link>
         ))}
       </div>
+	<div className="admin-link-container">
+  <Link to="/admin" className="admin-link">+ Add New Category</Link>
+</div>
     </div>
   );
 }

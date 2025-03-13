@@ -78,3 +78,21 @@
   font-size: 0.9rem;
   color: #777;
 }
+.admin-link-container {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.admin-link {
+  display: inline-block;
+  background: #f1f1f1;
+  color: #333;
+  padding: 10px 20px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.admin-link:hover {
+  background: #e0e0e0;
+}

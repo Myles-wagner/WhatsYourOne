@@ -1,8 +1,10 @@
+// Update src/App.js to add the admin route
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './components/HomePage';
 import ListsPage from './components/ListsPage';
 import CompareApp from './components/CompareApp';
+import AdminPage from './components/AdminPage'; // Add this import
 import './App.css';
 
 function App() {
@@ -13,6 +15,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/lists" element={<ListsPage />} />
           <Route path="/compare/:listId" element={<CompareApp />} />
+          <Route path="/admin" element={<AdminPage />} /> {/* Add this route */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>

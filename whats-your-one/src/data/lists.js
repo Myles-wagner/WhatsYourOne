@@ -1,3 +1,16 @@
+// Load any saved lists from localStorage
+try {
+  const savedLists = localStorage.getItem('whats-your-one-lists');
+  if (savedLists) {
+    const parsedLists = JSON.parse(savedLists);
+    // Replace the allLists array with the saved lists
+    allLists.length = 0;
+    parsedLists.forEach(list => allLists.push(list));
+  }
+} catch (err) {
+  console.error('Failed to load lists from localStorage:', err);
+}
+
 // Sample images - replace with actual images or use placeholders
 const placeholderBase = "https://via.placeholder.com/300x160?text=";
 
@@ -109,10 +122,135 @@ export const allLists = [
       { id: 'food9', name: 'Steak', image: 'https://via.placeholder.com/150?text=Steak' },
       { id: 'food10', name: 'Fried Chicken', image: 'https://via.placeholder.com/150?text=FriedChicken' },
     ]
+  },
+{
+    id: "ocean-animals",
+    title: "Ocean Animals",
+    description: "Choose your favorite creature from the deep blue sea.",
+    coverImage: `${placeholderBase}Ocean`,
+    items: [
+      { id: 'ocean1', name: 'Dolphin' },
+      { id: 'ocean2', name: 'Whale' },
+      { id: 'ocean3', name: 'Shark' },
+      { id: 'ocean4', name: 'Octopus' },
+      { id: 'ocean5', name: 'Jellyfish' },
+      { id: 'ocean6', name: 'Sea Turtle' },
+      { id: 'ocean7', name: 'Sea Urchin' },
+      { id: 'ocean8', name: 'Coral' },
+      { id: 'ocean9', name: 'Stingray' },
+      { id: 'ocean10', name: 'Clownfish' },
+    ]
+  },
+  {
+    id: "sports",
+    title: "Sports",
+    description: "Determine which sport is truly your favorite.",
+    coverImage: `${placeholderBase}Sports`,
+    items: [
+      { id: 'sport1', name: 'Basketball' },
+      { id: 'sport2', name: 'Football' },
+      { id: 'sport3', name: 'Soccer' },
+      { id: 'sport4', name: 'Baseball' },
+      { id: 'sport5', name: 'Tennis' },
+      { id: 'sport6', name: 'Ultimate Frisbee' },
+      { id: 'sport7', name: 'Hockey' },
+      { id: 'sport8', name: 'Golf' },
+      { id: 'sport9', name: 'Swimming' },
+      { id: 'sport10', name: 'Volleyball' },
+    ]
+  },
+  {
+    id: "board-games",
+    title: "Board Games",
+    description: "Find your ultimate favorite board game.",
+    coverImage: `${placeholderBase}BoardGames`,
+    items: [
+      { id: 'game1', name: 'Monopoly' },
+      { id: 'game2', name: 'Settlers of Catan' },
+      { id: 'game3', name: 'Scrabble' },
+      { id: 'game4', name: 'Chess' },
+      { id: 'game5', name: 'Ticket to Ride' },
+      { id: 'game6', name: 'Life' },
+      { id: 'game7', name: 'Clue' },
+      { id: 'game8', name: 'Risk' },
+      { id: 'game9', name: 'Trivial Pursuit' },
+      { id: 'game10', name: 'Checkers' },
+    ]
+  },
+  {
+    id: "pets",
+    title: "Pets",
+    description: "Choose your ideal animal companion.",
+    coverImage: `${placeholderBase}Pets`,
+    items: [
+      { id: 'pet1', name: 'Dog' },
+      { id: 'pet2', name: 'Cat' },
+      { id: 'pet3', name: 'Fish' },
+      { id: 'pet4', name: 'Bird' },
+      { id: 'pet5', name: 'Rabbit' },
+      { id: 'pet6', name: 'Hamster' },
+      { id: 'pet7', name: 'Guinea Pig' },
+      { id: 'pet8', name: 'Turtle' },
+      { id: 'pet9', name: 'Lizard' },
+      { id: 'pet10', name: 'Snake' },
+    ]
+  },
+  {
+    id: "numbers",
+    title: "Numbers",
+    description: "Find your lucky number from 1 to 10.",
+    coverImage: `${placeholderBase}Numbers`,
+    items: [
+      { id: 'num1', name: '1' },
+      { id: 'num2', name: '2' },
+      { id: 'num3', name: '3' },
+      { id: 'num4', name: '4' },
+      { id: 'num5', name: '5' },
+      { id: 'num6', name: '6' },
+      { id: 'num7', name: '7' },
+      { id: 'num8', name: '8' },
+      { id: 'num9', name: '9' },
+      { id: 'num10', name: '10' },
+    ]
+  },
+  {
+    id: "boy-names",
+    title: "Boy Names",
+    description: "Pick your favorite boy name from these options.",
+    coverImage: `${placeholderBase}BoyNames`,
+    items: [
+      { id: 'name1', name: 'Myles' },
+      { id: 'name2', name: 'Jamie' },
+      { id: 'name3', name: 'Tanner' },
+      { id: 'name4', name: 'Vinny' },
+      { id: 'name5', name: 'Connor' },
+      { id: 'name6', name: 'Max' },
+      { id: 'name7', name: 'Taylor' },
+      { id: 'name8', name: 'Eric' },
+      { id: 'name9', name: 'Ryan' },
+      { id: 'name10', name: 'Tyler' },
+    ]
   }
 ];
 
 // Helper function to find a list by ID
 export function getListById(id) {
   return allLists.find(list => list.id === id);
+}
+
+// New function to easily create and add a new list
+export function createNewList(id, title, description, items) {
+  const newList = {
+    id,
+    title,
+    description,
+    coverImage: `${placeholderBase}${title.replace(/\s+/g, '')}`,
+    items: items.map((item, index) => ({
+      id: `${id}${index + 1}`,
+      name: item
+    }))
+  };
+  
+  allLists.push(newList);
+  return newList;
 }
