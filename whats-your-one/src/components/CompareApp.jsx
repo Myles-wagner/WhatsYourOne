@@ -1,12 +1,19 @@
-// src/components/CompareApp.jsx
+// src/components/CompareApp.jsx - replace or update the existing file
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getListById } from '../data/lists';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { 
+  getListById, 
+  getDailyItems, 
+  saveDailyResult,
+  getDailyResult 
+} from '../data/lists';
 import './CompareApp.css';
 
 function CompareApp() {
-  const { listId } = useParams();
-  const [currentList, setCurrentList] = useState(null);
+  const { listId, mode = 'full' } = useParams();
+  const navigate = useNavigate();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [itemsToCompare, setItemsToCompare] = useState([]);
   const [survivors, setSurvivors] = useState([]);
   const [eliminated, setEliminated] = useState([]);
@@ -15,25 +22,73 @@ function CompareApp() {
   const [loading, setLoading] = useState(true);
   const [round, setRound] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [itemsPool, setItemsPool] = useState([]);
+  const [isDaily, setIsDaily] = useState(false);
+  
+  // Date for daily challenges
+  const currentDate = new Date();
+  const dateString = currentDate.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 
-  // Initial setup
+  // Check if this is a daily challenge
   useEffect(() => {
-    console.log('Loading list with ID:', listId);
-    const list = getListById(listId);
+    setIsDaily(mode === 'daily');
     
-    if (!list) {
-      console.error('List not found:', listId);
-      setLoading(false);
-      return;
+    // For daily mode, check if already completed
+    if (mode === 'daily') {
+      const result = getDailyResult(listId);
+      if (result) {
+        // Already completed today - could add logic to confirm restart
+        console.log('Already completed daily challenge for', listId);
+      }
+    }
+  }, [mode, listId]);
+
+  // Initialize items based on list and mode
+  useEffect(() => {
+    let items = [];
+    
+    if (listId === 'all' && mode === 'daily') {
+      // Daily challenge with items from all lists
+      items = getDailyItems();
+      setTitle(`Daily Challenge - ${dateString}`);
+      setDescription('Random items from all categories.');
+    } 
+    else if (mode === 'daily') {
+      // Daily challenge for specific list
+      const list = getListById(listId);
+      if (!list) {
+        setLoading(false);
+        return;
+      }
+      
+      items = getDailyItems(listId);
+      setTitle(`${list.title} - Daily Challenge`);
+      setDescription(`Daily selection of items from ${list.title}.`);
+    } 
+    else {
+      // Regular full list
+      const list = getListById(listId);
+      if (!list) {
+        setLoading(false);
+        return;
+      }
+      
+      items = [...list.items];
+      setTitle(list.title);
+      setDescription(list.description);
     }
     
-    setCurrentList(list);
-    initializeComparison(list.items);
-  }, [listId]);
+    setItemsPool(items);
+    initializeComparison(items);
+  }, [listId, mode]);
 
-  // Initialize the comparison with shuffled items
+  // Initialize the comparison
   const initializeComparison = (items) => {
-    // Shuffle all items
+    // Shuffle all items (for regular mode - daily is already shuffled)
     const shuffled = [...items].sort(() => 0.5 - Math.random());
     
     // Get first batch (2 items)
@@ -103,11 +158,16 @@ function CompareApp() {
     // If only 1 item remains in this round
     else if (survivorPool.length === 1) {
       // Add the last item to favorites
-      const newFavorites = [...favorites, survivorPool[0].id];
+      const newFavorites = [...favorites, survivorPool[0]];
       setFavorites(newFavorites);
       
+      // If this is a daily challenge, save the result
+      if (isDaily && newFavorites.length === 1) {
+        saveDailyResult(listId, currentDate, newFavorites[0].id);
+      }
+      
       // If we've processed all items, we're done
-      if (eliminatedPool.length + newFavorites.length >= currentList.items.length) {
+      if (eliminatedPool.length + newFavorites.length >= itemsPool.length) {
         setIsCompleted(true);
         setItemsToCompare([]);
       } 
@@ -126,8 +186,8 @@ function CompareApp() {
   // Start a new round with remaining items
   const startNewRound = (currentFavorites, eliminatedItems) => {
     // Get all items that haven't been favorited yet
-    const remainingItems = currentList.items.filter(
-      item => !currentFavorites.includes(item.id)
+    const remainingItems = itemsPool.filter(
+      item => !currentFavorites.some(fav => fav.id === item.id)
     );
     
     // Shuffle remaining items
@@ -142,7 +202,7 @@ function CompareApp() {
     setFavorites(currentFavorites);
     setEliminated(eliminatedItems);
     setSelectedItems([]);
-    setRound(1);
+    setRound(round + 1);
   };
 
   // Toggle item selection
@@ -154,34 +214,28 @@ function CompareApp() {
     }
   };
 
+  // Return to lists page
+  const handleBackToLists = () => {
+    navigate('/lists');
+  };
+
   // Restart the comparison
   const handleRestart = () => {
-    if (currentList) {
-      initializeComparison(currentList.items);
-    }
+    initializeComparison(itemsPool);
   };
 
   if (loading) {
     return <div className="loading-container">Loading...</div>;
   }
 
-  if (!currentList) {
-    return (
-      <div className="error-container">
-        <h2>List Not Found</h2>
-        <p>Sorry, we couldn't find the list you're looking for.</p>
-        <Link to="/lists" className="button">Back to Lists</Link>
-      </div>
-    );
-  }
-
   return (
     <div className="compare-container">
       <header className="compare-header">
-        <Link to="/lists" className="back-button">← Back to Lists</Link>
+        <button onClick={handleBackToLists} className="back-button">← Back to Lists</button>
         <div>
-          <h1>{currentList.title}</h1>
-          <p>{currentList.description}</p>
+          <h1>{title}</h1>
+          <p>{description}</p>
+          {isDaily && <div className="daily-badge">{dateString}</div>}
         </div>
       </header>
 
@@ -190,23 +244,24 @@ function CompareApp() {
           {!isCompleted && itemsToCompare.length > 0 ? (
             <>
               <h2>What's Your One?</h2>
-		<div className="items-grid">
-  			{itemsToCompare.map((item, index) => (
-    				<React.Fragment key={item.id}>
-      					{index === 1 && <div className="or-divider">OR</div>}
-      					<div 
-        					className={`item-card no-image ${selectedItems.includes(item.id) ? 'selected' : ''}`}
-        					onClick={() => toggleSelection(item.id)}
-      					>
-        					<div className="item-name">{item.name}</div>
-      					</div>
-    				</React.Fragment>
-  			))}
-		</div>
+              <div className="items-grid">
+                {itemsToCompare.map((item, index) => (
+                  <React.Fragment key={item.id}>
+                    {index === 1 && <div className="or-divider">OR</div>}
+                    <div 
+                      className={`item-card ${selectedItems.includes(item.id) ? 'selected' : ''}`}
+                      onClick={() => toggleSelection(item.id)}
+                    >
+                      <div className="item-name">{item.name}</div>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
               <div className="action-buttons">
                 <button 
                   className="pick-button"
                   onClick={handlePick}
+                  disabled={selectedItems.length === 0}
                 >
                   Pick Selected
                 </button>
@@ -216,6 +271,9 @@ function CompareApp() {
                 >
                   Keep All
                 </button>
+              </div>
+              <div className="progress-indicator">
+                Round {round} • {itemsPool.length - (eliminated.length + favorites.length)} items remaining
               </div>
             </>
           ) : (
@@ -228,6 +286,12 @@ function CompareApp() {
               >
                 Start Over
               </button>
+              <button 
+                className="lists-button"
+                onClick={handleBackToLists}
+              >
+                Back to Lists
+              </button>
             </div>
           )}
         </div>
@@ -236,20 +300,18 @@ function CompareApp() {
           <h2>Your Favorites</h2>
           {favorites.length > 0 ? (
             <ol className="favorites-list">
-  {favorites.map((itemId, index) => {
-    const item = currentList.items.find(i => i.id === itemId);
-    if (!item) return null;
-    
-    return (
-      <li key={item.id} className="favorite-item">
-        <div className="rank">{index + 1}</div>
-        <div className="favorite-card no-image">
-          <div className="item-name">{item.name}</div>
-        </div>
-      </li>
-    );
-  })}
-</ol>
+              {favorites.map((item, index) => (
+                <li key={item.id} className="favorite-item">
+                  <div className="rank">{index + 1}</div>
+                  <div className="favorite-card">
+                    <div className="item-name">{item.name}</div>
+                    {item.originList && (
+                      <div className="item-origin">from {item.originList}</div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
           ) : (
             <p className="no-favorites">Start comparing to find your favorites!</p>
           )}

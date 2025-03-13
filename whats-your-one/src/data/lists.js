@@ -254,3 +254,130 @@ export function createNewList(id, title, description, items) {
   allLists.push(newList);
   return newList;
 }
+
+// Get a deterministic random selection based on date
+export function getSeededRandom(seed) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  // Normalize to 0-1
+  return Math.abs((hash % 1000) / 1000);
+}
+
+// Get 10 daily items from a specific list or from all lists
+export function getDailyItems(listId = null, date = new Date()) {
+  // Create a date string like "2025-03-13"
+  const dateString = date.toISOString().split('T')[0];
+  
+  // Collect items based on listId
+  let sourceItems = [];
+  
+  if (listId === null || listId === 'all') {
+    // Get items from all lists
+    sourceItems = allLists.flatMap(list => 
+      list.items.map(item => ({
+        ...item,
+        originList: list.title,
+        originListId: list.id
+      }))
+    );
+  } else {
+    // Get items from specific list
+    const list = getListById(listId);
+    if (!list) return [];
+    
+    sourceItems = list.items.map(item => ({
+      ...item, 
+      originList: list.title,
+      originListId: list.id
+    }));
+  }
+
+  // Shuffle deterministically using the date seed
+  const shuffled = [...sourceItems].sort((a, b) => {
+    const seedA = dateString + a.id;
+    const seedB = dateString + b.id;
+    return getSeededRandom(seedA) - getSeededRandom(seedB);
+  });
+
+  // Take the first 10 items
+  return shuffled.slice(0, Math.min(10, shuffled.length));
+}
+
+// Save a daily challenge result
+export function saveDailyResult(listId, date, itemId) {
+  const dateString = date.toISOString().split('T')[0];
+  const key = `whats-your-one-daily-${listId}-${dateString}`;
+  
+  try {
+    localStorage.setItem(key, itemId);
+    return true;
+  } catch (e) {
+    console.error('Failed to save daily result:', e);
+    return false;
+  }
+}
+
+// Get a previously saved daily result
+export function getDailyResult(listId, date = new Date()) {
+  const dateString = date.toISOString().split('T')[0];
+  const key = `whats-your-one-daily-${listId}-${dateString}`;
+  
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.error('Failed to get daily result:', e);
+    return null;
+  }
+}
+
+// Get all saved daily results
+export function getAllDailyResults(date = new Date()) {
+  const dateString = date.toISOString().split('T')[0];
+  const results = [];
+  
+  // Check for the main daily challenge
+  const dailyResult = getDailyResult('all', date);
+  if (dailyResult) {
+    // Find the item in any list
+    let foundItem = null;
+    for (const list of allLists) {
+      const item = list.items.find(item => item.id === dailyResult);
+      if (item) {
+        foundItem = {
+          ...item,
+          listId: list.id,
+          listTitle: list.title
+        };
+        break;
+      }
+    }
+    
+    if (foundItem) {
+      results.push({
+        listId: 'all',
+        listTitle: 'Daily Challenge',
+        item: foundItem
+      });
+    }
+  }
+  
+  // Check results for each list
+  for (const list of allLists) {
+    const listResult = getDailyResult(list.id, date);
+    if (listResult) {
+      const item = list.items.find(item => item.id === listResult);
+      if (item) {
+        results.push({
+          listId: list.id,
+          listTitle: list.title,
+          item: item
+        });
+      }
+    }
+  }
+  
+  return results;
+}
