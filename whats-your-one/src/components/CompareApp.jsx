@@ -189,23 +189,20 @@ function CompareApp() {
         <div className="compare-main">
           {!isCompleted && itemsToCompare.length > 0 ? (
             <>
-              <h2>Round {round}: Choose your favorite(s)</h2>
-              <div className="items-grid">
-                {itemsToCompare.map(item => (
-                  <div 
-                    key={item.id}
-                    className={`item-card ${selectedItems.includes(item.id) ? 'selected' : ''}`}
-                    onClick={() => toggleSelection(item.id)}
-                  >
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} />
-                    ) : (
-                      <div className="item-placeholder">{item.name.charAt(0)}</div>
-                    )}
-                    <div className="item-name">{item.name}</div>
-                  </div>
-                ))}
-              </div>
+              <h2>What's Your One?</h2>
+		<div className="items-grid">
+  			{itemsToCompare.map((item, index) => (
+    				<React.Fragment key={item.id}>
+      					{index === 1 && <div className="or-divider">OR</div>}
+      					<div 
+        					className={`item-card no-image ${selectedItems.includes(item.id) ? 'selected' : ''}`}
+        					onClick={() => toggleSelection(item.id)}
+      					>
+        					<div className="item-name">{item.name}</div>
+      					</div>
+    				</React.Fragment>
+  			))}
+		</div>
               <div className="action-buttons">
                 <button 
                   className="pick-button"
@@ -239,25 +236,20 @@ function CompareApp() {
           <h2>Your Favorites</h2>
           {favorites.length > 0 ? (
             <ol className="favorites-list">
-              {favorites.map((itemId, index) => {
-                const item = currentList.items.find(i => i.id === itemId);
-                if (!item) return null;
-                
-                return (
-                  <li key={item.id} className="favorite-item">
-                    <div className="rank">{index + 1}</div>
-                    <div className="favorite-card">
-                      {item.image ? (
-                        <img src={item.image} alt={item.name} />
-                      ) : (
-                        <div className="item-placeholder">{item.name.charAt(0)}</div>
-                      )}
-                      <div className="item-name">{item.name}</div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+  {favorites.map((itemId, index) => {
+    const item = currentList.items.find(i => i.id === itemId);
+    if (!item) return null;
+    
+    return (
+      <li key={item.id} className="favorite-item">
+        <div className="rank">{index + 1}</div>
+        <div className="favorite-card no-image">
+          <div className="item-name">{item.name}</div>
+        </div>
+      </li>
+    );
+  })}
+</ol>
           ) : (
             <p className="no-favorites">Start comparing to find your favorites!</p>
           )}
