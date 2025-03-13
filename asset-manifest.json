@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/WhatsYourOne/static/css/main.eea8ea10.css",
-    "main.js": "/WhatsYourOne/static/js/main.032ead7f.js",
+    "main.css": "/WhatsYourOne/static/css/main.58b7c7b0.css",
+    "main.js": "/WhatsYourOne/static/js/main.b96d452e.js",
     "index.html": "/WhatsYourOne/index.html",
-    "main.eea8ea10.css.map": "/WhatsYourOne/static/css/main.eea8ea10.css.map",
-    "main.032ead7f.js.map": "/WhatsYourOne/static/js/main.032ead7f.js.map"
+    "main.58b7c7b0.css.map": "/WhatsYourOne/static/css/main.58b7c7b0.css.map",
+    "main.b96d452e.js.map": "/WhatsYourOne/static/js/main.b96d452e.js.map"
   },
   "entrypoints": [
-    "static/css/main.eea8ea10.css",
-    "static/js/main.032ead7f.js"
+    "static/css/main.58b7c7b0.css",
+    "static/js/main.b96d452e.js"
   ]
 }
