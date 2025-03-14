@@ -1,55 +1,137 @@
 // src/components/ListsPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { allLists, getDailyResult } from '../data/lists';
+import { getAllListsMetadata, getDailyResult, getListById } from '../data/lists';
 import './ListsPage.css';
 
 function ListsPage() {
+  const [lists, setLists] = useState([]);
   const [dailyResults, setDailyResults] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [itemNames, setItemNames] = useState({});
+  
   const currentDate = new Date();
   const dateString = currentDate.toLocaleDateString('en-US', { 
     month: 'short', 
     day: 'numeric' 
   });
 
-  // Load any saved daily results
+// Inside your ListsPage component, add these functions
+const getListColor = (listId) => {
+  // Create a deterministic color based on list ID
+  const colors = [
+    '#4285F4', // Blue
+    '#EA4335', // Red
+    '#34A853', // Green
+    '#FBBC05', // Yellow
+    '#8F44AD', // Purple
+    '#16A085', // Teal
+    '#E67E22', // Orange
+    '#2C3E50', // Navy
+    '#27AE60', // Emerald
+    '#E74C3C', // Red Orange
+    '#9B59B6', // Amethyst
+    '#1ABC9C'  // Turquoise
+  ];
+  
+  // Simple hash function to pick a color
+  let hash = 0;
+  for (let i = 0; i < listId.length; i++) {
+    hash = ((hash << 5) - hash) + listId.charCodeAt(i);
+    hash |= 0; // Convert to 32bit integer
+  }
+  
+  // Make sure it's positive and select a color
+  hash = Math.abs(hash);
+  return colors[hash % colors.length];
+};
+
+const getListIcon = (listId) => {
+  // Map list IDs to emojis or first letters (emojis look great as category icons)
+  const iconMap = {
+    'movies': '🎬',
+    'songs-2000s': '🎵',
+    'gen1-pokemon': '🎮',
+    'video-games': '🕹️',
+    'ocean-animals': '🐙',
+    'foods': '🍔',
+    'sports': '⚽',
+    'tv-shows': '📺',
+    'destinations': '🏝️',
+    'board-games': '🎲',
+    'boy-names': '👶',
+    'sports-franchises': '🏆'
+  };
+  
+  // Return the icon if it exists, otherwise the first letter
+  return iconMap[listId] || listId.charAt(0).toUpperCase();
+};
+
+  // Load lists and daily results
   useEffect(() => {
-    const results = {};
-    // Check the main daily challenge
-    const dailyAllResult = getDailyResult('all');
-    if (dailyAllResult) {
-      results['all'] = dailyAllResult;
+    async function loadData() {
+      try {
+        // Load all list metadata
+        const listsData = await getAllListsMetadata();
+        setLists(listsData);
+        
+        // Check daily results
+        const results = {};
+        const names = {};
+        
+        // Check the main daily challenge
+        const dailyAllResult = getDailyResult('all');
+        if (dailyAllResult) {
+          results['all'] = dailyAllResult;
+          
+          // Look for the item in any list to get its name
+          for (const listMeta of listsData) {
+            const list = await getListById(listMeta.id);
+            const item = list.items.find(item => item.id === dailyAllResult);
+            if (item) {
+              names[dailyAllResult] = item.name;
+              break;
+            }
+          }
+        }
+        
+        // Check each list's daily results
+        for (const listMeta of listsData) {
+          const listResult = getDailyResult(listMeta.id);
+          if (listResult) {
+            results[listMeta.id] = listResult;
+            
+            // Get the name of the selected item
+            if (!names[listResult]) {
+              const list = await getListById(listMeta.id);
+              const item = list.items.find(item => item.id === listResult);
+              if (item) {
+                names[listResult] = item.name;
+              }
+            }
+          }
+        }
+        
+        setDailyResults(results);
+        setItemNames(names);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading lists:', error);
+        setLoading(false);
+      }
     }
     
-    // Check each list
-    allLists.forEach(list => {
-      const listResult = getDailyResult(list.id);
-      if (listResult) {
-        results[list.id] = listResult;
-      }
-    });
-    
-    setDailyResults(results);
+    loadData();
   }, []);
 
-  // Find item name from ID
+  // Get the name of an item using the cached names
   const getItemNameById = (listId, itemId) => {
-    if (listId === 'all') {
-      // Check all lists
-      for (const list of allLists) {
-        const item = list.items.find(item => item.id === itemId);
-        if (item) return item.name;
-      }
-    } else {
-      // Check specific list
-      const list = allLists.find(list => list.id === listId);
-      if (list) {
-        const item = list.items.find(item => item.id === itemId);
-        if (item) return item.name;
-      }
-    }
-    return 'Unknown';
+    return itemNames[itemId] || 'Unknown';
   };
+
+  if (loading) {
+    return <div className="loading">Loading lists...</div>;
+  }
 
   return (
     <div className="lists-container">
@@ -90,20 +172,19 @@ function ListsPage() {
       <h2 className="category-heading">Categories</h2>
       
       <div className="lists-grid">
-        {allLists.map(list => (
+        {lists.map(list => (
           <div key={list.id} className="list-card">
-            <div className="list-image">
-              {list.coverImage ? (
-                <img src={list.coverImage} alt={list.title} />
-              ) : (
-                <div className="list-placeholder">{list.title.charAt(0)}</div>
-              )}
-            </div>
+<div className="list-image" style={{ 
+  backgroundColor: getListColor(list.id),
+  backgroundImage: 'none'
+}}>
+  <div className="list-icon">{getListIcon(list.id)}</div>
+</div>
             <h2>{list.title}</h2>
             <p>{list.description}</p>
             <div className="list-options">
               <Link to={`/compare/${list.id}/full`} className="list-option full">
-                Full List ({list.items.length})
+                Full List ({list.itemCount || '?'})
               </Link>
               <div className="daily-option">
                 <div className="daily-header">

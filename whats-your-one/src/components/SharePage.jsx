@@ -1,4 +1,4 @@
-// src/components/SharePage.jsx - create this new file
+// src/components/SharePage.jsx
 import React, { useRef, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllDailyResults } from '../data/lists';
@@ -7,6 +7,7 @@ import './SharePage.css';
 function SharePage() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const shareCardRef = useRef(null);
   const currentDate = new Date();
   const dateString = currentDate.toLocaleDateString('en-US', {
@@ -17,9 +18,19 @@ function SharePage() {
   });
 
   useEffect(() => {
-    const dailyResults = getAllDailyResults();
-    setResults(dailyResults);
-    setLoading(false);
+    async function loadResults() {
+      try {
+        const dailyResults = await getAllDailyResults();
+        setResults(dailyResults);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading results:', error);
+        setError('Failed to load your daily results. Please try again later.');
+        setLoading(false);
+      }
+    }
+    
+    loadResults();
   }, []);
 
   const handleDownloadImage = () => {
@@ -43,6 +54,16 @@ function SharePage() {
 
   if (loading) {
     return <div className="loading">Loading your results...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="share-container empty">
+        <h2>Error</h2>
+        <p>{error}</p>
+        <Link to="/lists" className="back-button">Back to Lists</Link>
+      </div>
+    );
   }
 
   if (results.length === 0) {

@@ -1,4 +1,4 @@
-// src/components/CompareApp.jsx - replace or update the existing file
+// src/components/CompareApp.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
@@ -20,6 +20,7 @@ function CompareApp() {
   const [selectedItems, setSelectedItems] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [round, setRound] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
   const [itemsPool, setItemsPool] = useState([]);
@@ -49,42 +50,54 @@ function CompareApp() {
 
   // Initialize items based on list and mode
   useEffect(() => {
-    let items = [];
-    
-    if (listId === 'all' && mode === 'daily') {
-      // Daily challenge with items from all lists
-      items = getDailyItems();
-      setTitle(`Daily Challenge - ${dateString}`);
-      setDescription('Random items from all categories.');
-    } 
-    else if (mode === 'daily') {
-      // Daily challenge for specific list
-      const list = getListById(listId);
-      if (!list) {
+    async function loadItems() {
+      try {
+        let items = [];
+        
+        if (listId === 'all' && mode === 'daily') {
+          // Daily challenge with items from all lists
+          items = await getDailyItems();
+          setTitle(`Daily Challenge - ${dateString}`);
+          setDescription('Random items from all categories.');
+        } 
+        else if (mode === 'daily') {
+          // Daily challenge for specific list
+          const list = await getListById(listId);
+          if (!list) {
+            setError('List not found');
+            setLoading(false);
+            return;
+          }
+          
+          items = await getDailyItems(listId);
+          setTitle(`${list.title} - Daily Challenge`);
+          setDescription(`Daily selection of items from ${list.title}.`);
+        } 
+        else {
+          // Regular full list
+          const list = await getListById(listId);
+          if (!list) {
+            setError('List not found');
+            setLoading(false);
+            return;
+          }
+          
+          items = [...list.items];
+          setTitle(list.title);
+          setDescription(list.description);
+        }
+        
+        setItemsPool(items);
+        initializeComparison(items);
+      } catch (error) {
+        console.error('Error loading items:', error);
+        setError('Failed to load items. Please try again.');
         setLoading(false);
-        return;
       }
-      
-      items = getDailyItems(listId);
-      setTitle(`${list.title} - Daily Challenge`);
-      setDescription(`Daily selection of items from ${list.title}.`);
-    } 
-    else {
-      // Regular full list
-      const list = getListById(listId);
-      if (!list) {
-        setLoading(false);
-        return;
-      }
-      
-      items = [...list.items];
-      setTitle(list.title);
-      setDescription(list.description);
     }
     
-    setItemsPool(items);
-    initializeComparison(items);
-  }, [listId, mode]);
+    loadItems();
+  }, [listId, mode, dateString]);
 
   // Initialize the comparison
   const initializeComparison = (items) => {
@@ -226,6 +239,16 @@ function CompareApp() {
 
   if (loading) {
     return <div className="loading-container">Loading...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Error</h2>
+        <p>{error}</p>
+        <button onClick={handleBackToLists} className="back-button">Back to Lists</button>
+      </div>
+    );
   }
 
   return (

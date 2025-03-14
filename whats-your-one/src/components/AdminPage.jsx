@@ -1,7 +1,7 @@
 // src/components/AdminPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { createNewList, allLists } from '../data/lists';
+import { createNewList, getAllListsMetadata } from '../data/lists';
 import './AdminPage.css';
 
 function AdminPage() {
@@ -13,6 +13,26 @@ function AdminPage() {
     items: ''
   });
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingLists, setExistingLists] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load existing list IDs to check for duplicates
+  useEffect(() => {
+    async function loadLists() {
+      try {
+        const lists = await getAllListsMetadata();
+        setExistingLists(lists);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading lists:', error);
+        setError('Failed to load existing lists. Some validations may not work.');
+        setLoading(false);
+      }
+    }
+    
+    loadLists();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -20,20 +40,29 @@ function AdminPage() {
       ...newList,
       [name]: value
     });
+    
+    // Clear error when user starts typing again
+    if (error) {
+      setError('');
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
     
     // Basic validation
     if (!newList.id || !newList.title || !newList.description || !newList.items) {
       setError('Please fill out all fields');
+      setIsSubmitting(false);
       return;
     }
     
-    // Check if ID already exists
-    if (allLists.some(list => list.id === newList.id)) {
-      setError('A list with this ID already exists');
+    // Validate ID format (no spaces, only alphanumeric and hyphens)
+    if (!/^[a-z0-9-]+$/.test(newList.id)) {
+      setError('Category ID must contain only lowercase letters, numbers, and hyphens');
+      setIsSubmitting(false);
       return;
     }
     
@@ -41,22 +70,32 @@ function AdminPage() {
     const items = newList.items.split('\n').filter(item => item.trim());
     if (items.length < 2) {
       setError('Please add at least 2 items');
+      setIsSubmitting(false);
       return;
     }
     
-    // Create the new list
-    createNewList(newList.id, newList.title, newList.description, items);
-    
-    // Save to localStorage for persistence
     try {
-      localStorage.setItem('whats-your-one-lists', JSON.stringify(allLists));
-    } catch (err) {
-      console.error('Failed to save lists to localStorage:', err);
+      // Check if ID already exists
+      if (existingLists.some(list => list.id === newList.id)) {
+        setError('A list with this ID already exists');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Create the new list
+      await createNewList(newList.id, newList.title, newList.description, items);
+      
+      // Navigate to lists page after successful creation
+      navigate('/lists');
+    } catch (error) {
+      setError(`Error creating list: ${error.message}`);
+      setIsSubmitting(false);
     }
-    
-    // Navigate to lists page
-    navigate('/lists');
   };
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <div className="admin-container">
@@ -77,6 +116,7 @@ function AdminPage() {
             value={newList.id} 
             onChange={handleChange}
             placeholder="e.g. ice-cream-flavors"
+            disabled={isSubmitting}
           />
         </div>
         
@@ -89,6 +129,7 @@ function AdminPage() {
             value={newList.title} 
             onChange={handleChange}
             placeholder="e.g. Ice Cream Flavors"
+            disabled={isSubmitting}
           />
         </div>
         
@@ -101,6 +142,7 @@ function AdminPage() {
             value={newList.description} 
             onChange={handleChange}
             placeholder="e.g. Find your favorite ice cream flavor"
+            disabled={isSubmitting}
           />
         </div>
         
@@ -113,10 +155,17 @@ function AdminPage() {
             onChange={handleChange}
             rows="10"
             placeholder="Vanilla&#10;Chocolate&#10;Strawberry&#10;Mint Chocolate Chip&#10;..."
+            disabled={isSubmitting}
           />
         </div>
         
-        <button type="submit" className="submit-button">Add Category</button>
+        <button 
+          type="submit" 
+          className="submit-button"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Adding Category...' : 'Add Category'}
+        </button>
       </form>
     </div>
   );
