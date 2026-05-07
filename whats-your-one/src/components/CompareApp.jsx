@@ -1,262 +1,226 @@
 // src/components/CompareApp.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
-  getListById, 
-  getDailyItems, 
-  saveDailyResult,
-  getDailyResult 
-} from '../data/lists';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getListById, getDailyItems, saveDailyResult, getDailyResult } from '../data/lists';
 import './CompareApp.css';
+
+// Fisher-Yates shuffle — unbiased, O(n). Replaces the old sort(() => 0.5 - Math.random())
+// which statistically favors items near the start of the array.
+function fisherYatesShuffle(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 function CompareApp() {
   const { listId, mode = 'full' } = useParams();
   const navigate = useNavigate();
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [itemsToCompare, setItemsToCompare] = useState([]);
   const [survivors, setSurvivors] = useState([]);
   const [eliminated, setEliminated] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
-  const [favorites, setFavorites] = useState([]);
+  const [rankings, setRankings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [round, setRound] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
   const [itemsPool, setItemsPool] = useState([]);
   const [isDaily, setIsDaily] = useState(false);
-  
-  // Date for daily challenges
+  const [listTitle, setListTitle] = useState('');
+
   const currentDate = new Date();
-  const dateString = currentDate.toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    month: 'long', 
-    day: 'numeric' 
+  const dateString = currentDate.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
   });
 
-  // Check if this is a daily challenge
   useEffect(() => {
     setIsDaily(mode === 'daily');
-    
-    // For daily mode, check if already completed
     if (mode === 'daily') {
       const result = getDailyResult(listId);
       if (result) {
-        // Already completed today - could add logic to confirm restart
         console.log('Already completed daily challenge for', listId);
       }
     }
   }, [mode, listId]);
 
-  // Initialize items based on list and mode
   useEffect(() => {
     async function loadItems() {
       try {
-        let items = [];
-        
+        let items;
         if (listId === 'all' && mode === 'daily') {
-          // Daily challenge with items from all lists
           items = await getDailyItems();
-          setTitle(`Daily Challenge - ${dateString}`);
+          setTitle(`Daily Challenge — ${dateString}`);
           setDescription('Random items from all categories.');
-        } 
-        else if (mode === 'daily') {
-          // Daily challenge for specific list
+          setListTitle('Daily Challenge');
+        } else if (mode === 'daily') {
           const list = await getListById(listId);
           if (!list) {
             setError('List not found');
             setLoading(false);
             return;
           }
-          
           items = await getDailyItems(listId);
-          setTitle(`${list.title} - Daily Challenge`);
-          setDescription(`Daily selection of items from ${list.title}.`);
-        } 
-        else {
-          // Regular full list
+          items = items.map(item => ({ ...item, originList: list.title }));
+          setTitle(`${list.title} — Daily Challenge`);
+          setDescription(`Daily selection of 10 items from ${list.title}.`);
+          setListTitle(list.title);
+        } else {
           const list = await getListById(listId);
           if (!list) {
             setError('List not found');
             setLoading(false);
             return;
           }
-          
-          items = [...list.items];
+          // Add originList to every item so the category label always shows on comparison cards
+          items = list.items.map(item => ({ ...item, originList: list.title }));
           setTitle(list.title);
           setDescription(list.description);
+          setListTitle(list.title);
         }
-        
         setItemsPool(items);
         initializeComparison(items);
-      } catch (error) {
-        console.error('Error loading items:', error);
+      } catch (err) {
+        console.error('Error loading items:', err);
         setError('Failed to load items. Please try again.');
         setLoading(false);
       }
     }
-    
     loadItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listId, mode, dateString]);
 
-  // Initialize the comparison
   const initializeComparison = (items) => {
-    // Shuffle all items (for regular mode - daily is already shuffled)
-    const shuffled = [...items].sort(() => 0.5 - Math.random());
-    
-    // Get first batch (2 items)
+    const shuffled = fisherYatesShuffle(items);
     const firstBatch = shuffled.slice(0, 2);
     const remaining = shuffled.slice(2);
-    
     setItemsToCompare(firstBatch);
     setSurvivors(remaining);
     setEliminated([]);
     setSelectedItems([]);
-    setFavorites([]);
+    setRankings([]);
     setRound(1);
     setIsCompleted(false);
     setLoading(false);
   };
 
-  // Handle user selection
   const handlePick = () => {
     if (selectedItems.length === 0) {
-      alert("Please select at least one item!");
+      alert('Please select at least one item!');
       return;
     }
-    
-    // Get the selected items
-    const selected = itemsToCompare.filter(item => selectedItems.includes(item.id));
-    
-    // Get the non-selected items
-    const nonSelected = itemsToCompare.filter(item => !selectedItems.includes(item.id));
-    
-    // Add non-selected items to eliminated, with reference to what eliminated them
+    const selected = itemsToCompare.filter(item => selectedItems.includes(item));
+    const nonSelected = itemsToCompare.filter(item => !selectedItems.includes(item));
+
     const newEliminated = [
       ...eliminated,
       ...nonSelected.map(item => ({
         ...item,
-        eliminatedBy: selected.map(s => s.id)
-      }))
+        eliminatedBy: selected.map(s => s.name),
+      })),
     ];
-    
-    // Add selected items to a temporary survivor pool
     const newSurvivors = [...survivors, ...selected];
-    
     processNextBatch(newSurvivors, newEliminated);
   };
 
-  // Handle passing on all items
   const handlePass = () => {
-    // All current items survive
     const newSurvivors = [...survivors, ...itemsToCompare];
     processNextBatch(newSurvivors, eliminated);
   };
 
-  // Process the next batch of items
   const processNextBatch = (survivorPool, eliminatedPool) => {
     setEliminated(eliminatedPool);
-    
-    // If there are at least 2 items left to compare
+
     if (survivorPool.length >= 2) {
-      // Get the next 2 items
       const nextBatch = survivorPool.slice(0, 2);
       const remaining = survivorPool.slice(2);
-      
       setItemsToCompare(nextBatch);
       setSurvivors(remaining);
       setSelectedItems([]);
-      setRound(round + 1);
-    }
-    // If only 1 item remains in this round
-    else if (survivorPool.length === 1) {
-      // Add the last item to favorites
-      const newFavorites = [...favorites, survivorPool[0]];
-      setFavorites(newFavorites);
-      
-      // If this is a daily challenge, save the result
-      if (isDaily && newFavorites.length === 1) {
-        saveDailyResult(listId, currentDate, newFavorites[0].id);
+      setRound(r => r + 1);
+    } else if (survivorPool.length === 1) {
+      const newRankings = [...rankings, survivorPool[0]];
+      setRankings(newRankings);
+
+      if (isDaily && newRankings.length === 1) {
+        saveDailyResult(listId, currentDate, newRankings[0]);
       }
-      
-      // If we've processed all items, we're done
-      if (eliminatedPool.length + newFavorites.length >= itemsPool.length) {
+
+      if (eliminatedPool.length + newRankings.length === itemsPool.length) {
         setIsCompleted(true);
         setItemsToCompare([]);
-      } 
-      // Otherwise, start a new round with remaining items
-      else {
-        startNewRound(newFavorites, eliminatedPool);
+      } else {
+        startNewRound(newRankings, eliminatedPool);
       }
-    }
-    // If no items remain (should never happen, but just in case)
-    else {
+    } else {
       setIsCompleted(true);
       setItemsToCompare([]);
     }
   };
 
-  // Start a new round with remaining items
-  const startNewRound = (currentFavorites, eliminatedItems) => {
-    // Get all items that haven't been favorited yet
+  const startNewRound = (currentRankings, eliminatedItems) => {
     const remainingItems = itemsPool.filter(
-      item => !currentFavorites.some(fav => fav.id === item.id)
+      item => !currentRankings.some(ranked => ranked === item)
     );
-    
-    // Shuffle remaining items
-    const shuffled = [...remainingItems].sort(() => 0.5 - Math.random());
-    
-    // Set up the next batch
+    const shuffled = fisherYatesShuffle(remainingItems);
     const nextBatch = shuffled.slice(0, 2);
     const nextRemaining = shuffled.slice(2);
-    
+
     setItemsToCompare(nextBatch);
     setSurvivors(nextRemaining);
-    setFavorites(currentFavorites);
+    setRankings(currentRankings);
     setEliminated(eliminatedItems);
     setSelectedItems([]);
-    setRound(round + 1);
+    setRound(r => r + 1);
   };
 
-  // Toggle item selection
-  const toggleSelection = (itemId) => {
-    if (selectedItems.includes(itemId)) {
-      setSelectedItems(selectedItems.filter(id => id !== itemId));
+  const toggleSelection = (item) => {
+    if (selectedItems.includes(item)) {
+      setSelectedItems(selectedItems.filter(s => s !== item));
     } else {
-      setSelectedItems([...selectedItems, itemId]);
+      setSelectedItems([...selectedItems, item]);
     }
   };
 
-  // Return to lists page
-  const handleBackToLists = () => {
-    navigate('/lists');
-  };
-
-  // Restart the comparison
-  const handleRestart = () => {
-    initializeComparison(itemsPool);
-  };
+  const handleBackToLists = () => navigate('/lists');
+  const handleRestart = () => initializeComparison(itemsPool);
 
   if (loading) {
-    return <div className="loading-container">Loading...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner">Loading...</div>
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div className="error-container">
-        <h2>Error</h2>
-        <p>{error}</p>
-        <button onClick={handleBackToLists} className="back-button">Back to Lists</button>
+        <p>Error: {error}</p>
+        <button onClick={handleBackToLists} className="back-button">
+          Back to Lists
+        </button>
       </div>
     );
   }
 
+  const itemsRemaining = itemsPool.length - eliminated.length - rankings.length;
+
   return (
     <div className="compare-container">
       <header className="compare-header">
-        <button onClick={handleBackToLists} className="back-button">← Back to Lists</button>
-        <div>
-          <h1>{title}</h1>
+        <button onClick={handleBackToLists} className="back-button">
+          ← Back to Lists
+        </button>
+        <div className="header-info">
+          <h2>{title}</h2>
           <p>{description}</p>
           {isDaily && <div className="daily-badge">{dateString}</div>}
         </div>
@@ -266,77 +230,98 @@ function CompareApp() {
         <div className="compare-main">
           {!isCompleted && itemsToCompare.length > 0 ? (
             <>
-              <h2>What's Your One?</h2>
+              <h3 className="compare-prompt">What's Your One?</h3>
+
               <div className="items-grid">
                 {itemsToCompare.map((item, index) => (
-                  <React.Fragment key={item.id}>
-                    {index === 1 && <div className="or-divider">OR</div>}
-                    <div 
-                      className={`item-card ${selectedItems.includes(item.id) ? 'selected' : ''}`}
-                      onClick={() => toggleSelection(item.id)}
+                  <React.Fragment key={item.id || item.name || index}>
+                    {index > 0 && (
+                      <div className="or-divider">
+                        <div>OR</div>
+                      </div>
+                    )}
+                    <div
+                      className={`item-card ${selectedItems.includes(item) ? 'selected' : ''}`}
+                      onClick={() => toggleSelection(item)}
                     >
                       <div className="item-name">{item.name}</div>
+                      <div className="item-category">
+                        {item.originList || listTitle}
+                      </div>
                     </div>
                   </React.Fragment>
                 ))}
               </div>
+
               <div className="action-buttons">
-                <button 
+                <button
                   className="pick-button"
                   onClick={handlePick}
                   disabled={selectedItems.length === 0}
                 >
                   Pick Selected
                 </button>
-                <button 
-                  className="pass-button"
-                  onClick={handlePass}
-                >
+                <button className="pass-button" onClick={handlePass}>
                   Keep All
                 </button>
               </div>
+
               <div className="progress-indicator">
-                Round {round} • {itemsPool.length - (eliminated.length + favorites.length)} items remaining
+                Round {round} • {itemsRemaining} item{itemsRemaining !== 1 ? 's' : ''} remaining
               </div>
             </>
           ) : (
             <div className="completed-message">
-              <h2>All Done!</h2>
-              <p>You've completed all the comparisons.</p>
-              <button 
-                className="restart-button"
-                onClick={handleRestart}
-              >
-                Start Over
-              </button>
-              <button 
-                className="lists-button"
-                onClick={handleBackToLists}
-              >
-                Back to Lists
-              </button>
+              <div className="winner-reveal">
+                <div className="winner-label">🎉 Your #1 is...</div>
+                {rankings.length > 0 && (
+                  <div className="winner-card">
+                    <div className="winner-name">{rankings[0].name}</div>
+                    {rankings[0].originList && (
+                      <div className="winner-category">
+                        from {rankings[0].originList}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {rankings.length > 1 && (
+                <p className="full-ranking-hint">
+                  See your full ranking in the panel →
+                </p>
+              )}
+
+              <div className="completion-actions">
+                <button className="restart-button" onClick={handleRestart}>
+                  Start Over
+                </button>
+                <button className="lists-button" onClick={handleBackToLists}>
+                  Back to Lists
+                </button>
+              </div>
             </div>
           )}
         </div>
 
-        <div className="favorites-container">
-          <h2>Your Favorites</h2>
-          {favorites.length > 0 ? (
-            <ol className="favorites-list">
-              {favorites.map((item, index) => (
-                <li key={item.id} className="favorite-item">
-                  <div className="rank">{index + 1}</div>
-                  <div className="favorite-card">
+        <div className="rankings-container">
+          <h3>Your Rankings</h3>
+          {rankings.length > 0 ? (
+            <div className="rankings-list">
+              {rankings.map((item, index) => (
+                <div key={item.id || item.name || index} className="ranking-item">
+                  <div className="rank">#{index + 1}</div>
+                  <div className="ranking-card">
                     <div className="item-name">{item.name}</div>
                     {item.originList && (
-                      <div className="item-origin">from {item.originList}</div>
+                      <div className="item-origin">{item.originList}</div>
                     )}
                   </div>
-                </li>
+                </div>
               ))}
-            </ol>
+            </div>
           ) : (
-            <p className="no-favorites">Start comparing to find your favorites!</p>
+            <p className="no-rankings">Start comparing to find your #1!</p>
           )}
         </div>
       </div>
