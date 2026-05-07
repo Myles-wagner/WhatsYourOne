@@ -28,7 +28,7 @@ jobs:
           cache-dependency-path: whats-your-one/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps
         working-directory: whats-your-one
 
       - name: Build
