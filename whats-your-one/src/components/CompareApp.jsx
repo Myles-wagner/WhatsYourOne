@@ -227,6 +227,7 @@ function CompareApp() {
       </header>
 
       <div className="compare-content">
+        {/* ── Left: comparison area ── */}
         <div className="compare-main">
           {!isCompleted && itemsToCompare.length > 0 ? (
             <>
@@ -267,10 +268,11 @@ function CompareApp() {
               </div>
 
               <div className="progress-indicator">
-                Round {round} • {itemsRemaining} item{itemsRemaining !== 1 ? 's' : ''} remaining
+                Round {round} &bull; {itemsRemaining} item{itemsRemaining !== 1 ? 's' : ''} remaining
               </div>
             </>
           ) : (
+            /* ── Completion / Results reveal ── */
             <div className="completed-message">
               <div className="winner-reveal">
                 <div className="winner-label">🎉 Your #1 is...</div>
@@ -300,10 +302,39 @@ function CompareApp() {
                   Back to Lists
                 </button>
               </div>
+
+              {/* ── Community Stats — Coming Soon ── */}
+              <div className="community-stats-section">
+                <div className="community-stats-header">
+                  <h3>Community Stats</h3>
+                  <span className="coming-soon-badge">Coming Soon</span>
+                </div>
+                <p className="community-stats-desc">
+                  See how your #1 compares to what thousands of others picked for this category.
+                </p>
+                <div className="community-preview" aria-hidden="true">
+                  {[62, 21, 11, 6].map((pct, i) => (
+                    <div key={i} className="community-bar-row">
+                      <div className="community-bar-label" />
+                      <div className="community-bar-track">
+                        <div className="community-bar-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <div className="community-bar-pct" />
+                    </div>
+                  ))}
+                  <div className="community-lock-overlay">
+                    <span className="community-lock-icon">🔒</span>
+                  </div>
+                </div>
+                <p className="community-stats-cta">
+                  Community leaderboards are coming — stay tuned!
+                </p>
+              </div>
             </div>
           )}
         </div>
 
+        {/* ── Right: live rankings sidebar ── */}
         <div className="rankings-container">
           <h3>Your Rankings</h3>
           {rankings.length > 0 ? (
