@@ -150,7 +150,7 @@ function CompareApp() {
       setRankings(newRankings);
 
       if (isDaily && newRankings.length === 1) {
-        saveDailyResult(listId, currentDate, newRankings[0]);
+        saveDailyResult(listId, currentDate, newRankings[0].id);
       }
 
       if (eliminatedPool.length + newRankings.length === itemsPool.length) {
