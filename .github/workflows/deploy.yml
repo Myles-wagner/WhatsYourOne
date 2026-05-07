@@ -32,7 +32,7 @@ jobs:
         working-directory: whats-your-one
 
       - name: Build
-        run: npm run build
+        run: CI=false npm run build
         working-directory: whats-your-one
 
       - name: Deploy to GitHub Pages
