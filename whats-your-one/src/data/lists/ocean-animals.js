@@ -44,6 +44,8 @@ export default {
     { id: 'ocean37', name: 'Coral Reef' },
     { id: 'ocean38', name: 'Sea Anemone' },
     { id: 'ocean39', name: 'Portuguese Man o\' War' },
-    { id: 'ocean40', name: 'Stingray' }
+    { id: 'ocean40', name: 'Stingray' },
+    { id: 'ocean41', name: 'Mola Mola' },
+    { id: 'ocean42', name: 'Upside-down Jellyfish' }
   ]
 };
