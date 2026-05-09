@@ -49,6 +49,7 @@ export default {
     { id: 'team42', name: 'Juventus (Serie A)' },
     { id: 'team43', name: 'Vegas Golden Knights (NHL)' },
     { id: 'team44', name: 'Toronto Raptors (NBA)' },
-    { id: 'team45', name: 'Buffalo Bills (NFL)' }
+    { id: 'team45', name: 'Buffalo Bills (NFL)' },
+    { id: 'team46', name: 'AFC Wimblton (English Football)' }
   ]
 };
